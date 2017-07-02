@@ -5,30 +5,7 @@ import (
   "crypto/aes"
 )
 
-func pkcs7(message []byte, bs int) []byte {
-  if len(message) % bs == 0 {
-    result := make([]byte, 0, len(message) + bs)
-    for _, b := range message {
-      result = append(result, b)
-    }
-    for i := 0; i < bs; i++ {
-      result = append(result, byte(bs))
-    }
-    return result
-  } else {
-    residue := bs - (len(message) % bs)
-    result := make([]byte, 0, len(message) + residue)
-    for _, b := range message {
-      result = append(result, b)
-    }
-    for i := 0; i < residue; i++ {
-      result = append(result, byte(residue))
-    }
-    return result
-  }
-}
-
-func decryptAesEcb(ciphertext, key []byte) []byte {
+func decryptAesEcbMultiblock(ciphertext, key []byte) []byte {
   block, _ := aes.NewCipher(key)
   bs := block.BlockSize()
 

@@ -18,6 +18,7 @@ func s1() {
 func s2() {
   fmt.Println("Set 2")
   c9()
+  c10()
   fmt.Println()
 }
 
