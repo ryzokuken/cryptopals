@@ -19,8 +19,8 @@ func c4() {
   for _, c := range strings.Split(string(data), "\n") {
     hex, _ := hex.DecodeString(c)
     for i := 0; i < 256; i++ {
-      xored := single_byte_xor(hex, byte(i))
-      score := score_english_string(xored)
+      xored := singleByteXor(hex, byte(i))
+      score := scoreEnglishString(xored)
 
       if !math.IsInf(score, 1) {
         if !isSet || score < bestScore {

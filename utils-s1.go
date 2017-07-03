@@ -29,8 +29,8 @@ func breakSingleKeyXor(hex []byte) byte {
   var minScore float64
   isSet := false
   for i := 0; i < 256; i++ {
-    xored := single_byte_xor(hex, byte(i))
-    score := score_english_string(xored)
+    xored := singleByteXor(hex, byte(i))
+    score := scoreEnglishString(xored)
 
     if !math.IsInf(score, 1) {
       if !isSet || score < minScore {
@@ -43,7 +43,7 @@ func breakSingleKeyXor(hex []byte) byte {
   return minKey
 }
 
-func fixed_xor(a, b []byte) []byte {
+func fixedXor(a, b []byte) []byte {
   result := make([]byte, len(a))
   for i, val := range a {
     result[i] = val ^ b[i]
@@ -51,7 +51,7 @@ func fixed_xor(a, b []byte) []byte {
   return result
 }
 
-func single_byte_xor(a []byte, b byte) []byte {
+func singleByteXor(a []byte, b byte) []byte {
   result := make([]byte, len(a))
   for i, val := range a {
     result[i] = val ^ b
@@ -59,8 +59,8 @@ func single_byte_xor(a []byte, b byte) []byte {
   return result
 }
 
-func score_english_string(a []byte) float64 {
-  english_freq := [28]float64{
+func scoreEnglishString(a []byte) float64 {
+  englishFreq := [28]float64{
     0.0651738, 0.0124248, 0.0217339, 0.0349835,  //'A', 'B', 'C', 'D',...
     0.1041442, 0.0197881, 0.0158610, 0.0492888,
     0.0558094, 0.0009033, 0.0050529, 0.0331490,
@@ -94,7 +94,7 @@ func score_english_string(a []byte) float64 {
 
   var chi2 float64
   for i, val := range count {
-    expected := float64(length) * english_freq[i]
+    expected := float64(length) * englishFreq[i]
     difference := val - expected
     chi2 += difference * difference
   }

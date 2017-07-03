@@ -66,7 +66,7 @@ func c6() {
   }
 
   transpose := make([][]byte, 29)
-  for i, _ := range transpose {
+  for i := range transpose {
     row := make([]byte, 0, nsplit + 1)
     for _, block := range blocks {
       if i < len(block) {
@@ -77,7 +77,7 @@ func c6() {
   }
 
   key := make([]byte, 29)
-  for i, _ := range key {
+  for i := range key {
     key[i] = breakSingleKeyXor(transpose[i])
   }
 

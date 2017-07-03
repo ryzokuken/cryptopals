@@ -12,7 +12,7 @@ func c3() {
 
   minKey := breakSingleKeyXor(hex)
 
-  if string(single_byte_xor(hex, minKey)) == output {
+  if string(singleByteXor(hex, minKey)) == output {
     fmt.Println("Challenge 3 passed!")
   } else {
     fmt.Println("Challenge 3 failed.")

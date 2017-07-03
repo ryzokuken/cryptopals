@@ -17,10 +17,6 @@ func c10() {
   base64.StdEncoding.Decode(decoded, input)
 
   iv := make([]byte, 16)
-  for i, _ := range iv {
-    iv[i] = byte(0)
-  }
-
   if string(decryptAesCbc(decoded, []byte("YELLOW SUBMARINE"), iv)) == output {
     fmt.Println("Challenge 10 passed!")
   } else {

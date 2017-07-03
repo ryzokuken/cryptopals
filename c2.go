@@ -13,7 +13,7 @@ func c2() {
   hex1, _ := hex.DecodeString(input1)
   hex2, _ := hex.DecodeString(input2)
 
-  result := hex.EncodeToString(fixed_xor(hex1, hex2))
+  result := hex.EncodeToString(fixedXor(hex1, hex2))
 
   if result == output {
     fmt.Println("Challenge 2 passed!")
