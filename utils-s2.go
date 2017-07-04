@@ -133,6 +133,12 @@ func encryptionOracle(plaintext []byte) ([]byte, string) {
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
 
+	pl := r.Intn(6) + 5
+	sl := r.Intn(6) + 5
+
+	plaintext = append(randomBytes(pl), plaintext...)
+	plaintext = append(plaintext, randomBytes(sl)...)
+
 	padded := pkcs7(plaintext, 16)
 	key := randomAESKey()
 
