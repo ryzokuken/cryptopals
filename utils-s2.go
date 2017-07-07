@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"crypto/aes"
+	"encoding/base64"
+	"errors"
 	"math/rand"
 	"time"
 )
@@ -29,17 +31,17 @@ func pkcs7(message []byte, bs int) []byte {
 	return result
 }
 
-func encryptAesEcb(plaintext, key []byte) []byte {
+func encryptAesEcb(plaintext, key []byte) ([]byte, error) {
 	block, _ := aes.NewCipher(key)
 	bs := block.BlockSize()
 
 	if len(plaintext) != bs {
-		panic("Need a multiple of the blocksize")
+		return nil, errors.New("Should be a multiple of blocksize")
 	}
 
 	ciphertext := make([]byte, bs)
 	block.Encrypt(ciphertext, plaintext)
-	return ciphertext
+	return ciphertext, nil
 }
 
 func decryptAesEcb(ciphertext, key []byte) []byte {
@@ -88,7 +90,7 @@ func encryptAesCbc(plaintext, key, iv []byte) []byte {
 		pb := plaintext[:bs]
 		plaintext = plaintext[bs:]
 
-		encryption := encryptAesEcb(fixedXor(pb, buffer), key)
+		encryption, _ := encryptAesEcb(fixedXor(pb, buffer), key)
 		ciphertext = append(ciphertext, encryption...)
 		buffer = encryption
 	}
@@ -110,12 +112,12 @@ func randomAESKey() []byte {
 	return randomBytes(16)
 }
 
-func encryptAesEcbMultiblock(plaintext, key []byte) []byte {
+func encryptAesEcbMultiblock(plaintext, key []byte) ([]byte, error) {
 	block, _ := aes.NewCipher(key)
 	bs := block.BlockSize()
 
 	if len(plaintext)%bs != 0 {
-		panic("Need a multiple of the blocksize")
+		return nil, errors.New("Must be a mutiple of the blocksize")
 	}
 
 	ciphertext := make([]byte, 0, len(plaintext))
@@ -126,7 +128,7 @@ func encryptAesEcbMultiblock(plaintext, key []byte) []byte {
 		ciphertext = append(ciphertext, cb...)
 	}
 
-	return ciphertext
+	return ciphertext, nil
 }
 
 func encryptionOracle(plaintext []byte) ([]byte, string) {
@@ -146,7 +148,8 @@ func encryptionOracle(plaintext []byte) ([]byte, string) {
 		iv := randomBytes(16)
 		return encryptAesCbc(padded, key, iv), "CBC"
 	}
-	return encryptAesEcbMultiblock(padded, key), "ECB"
+	e, _ := encryptAesEcbMultiblock(padded, key)
+	return e, "ECB"
 }
 
 func detectEncryption(ciphertext []byte) string {
@@ -162,4 +165,14 @@ func detectEncryption(ciphertext []byte) string {
 		return "CBC"
 	}
 	return "ECB"
+}
+
+func byteAtATimeECBDecryption(p, k []byte) []byte {
+	unknown := "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"
+	decoded, _ := base64.StdEncoding.DecodeString(unknown)
+
+	p = append(p, decoded...)
+	p = pkcs7(p, 16)
+	e, _ := encryptAesEcbMultiblock(p, k)
+	return e
 }
