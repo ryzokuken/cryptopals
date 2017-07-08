@@ -16,14 +16,14 @@ func s1() {
 }
 
 func s2() {
-	// fmt.Println("Set 2")
-	// c9()
-	// c10()
-	// c11()
+	fmt.Println("Set 2")
+	c9()
+	c10()
+	c11()
 	c12()
 }
 
 func main() {
-	// s1()
+	s1()
 	s2()
 }
