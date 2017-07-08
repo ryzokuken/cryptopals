@@ -1,11 +1,14 @@
 package main
 
 import (
+	"encoding/base64"
 	"bytes"
 	"fmt"
 )
 
 func c12() {
+	output := "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"
+
 	// Step 1: Generate a Random Key
 	rk := randomAESKey()
 
@@ -21,10 +24,16 @@ func c12() {
 		}
 		buffer = append(buffer, byte('A'))
 	}
-	fmt.Println(bs)
+	if bs != 16 {
+		fmt.Println("Challenge 12 failed.")
+		return
+	}
 
 	// Step 3: Detect ECB
-	fmt.Println(detectEncryption(byteAtATimeECBDecryption(message, rk)))
+	if detectEncryption(byteAtATimeECBDecryption(message, rk)) != "ECB" {
+		fmt.Println("Challenge 12 failed.")
+		return
+	}
 
 	// Step 4: Find the plaintext
 	byteOffset := 0
@@ -36,7 +45,6 @@ func c12() {
 			block[i] = byte('A')
 		}
 		input := append(block, answer...)
-		// fmt.Printf("%d %d\n", byteOffset * bs, len(input))
 		for true {
 			enc := byteAtATimeECBDecryption(block, rk)
 			found := false
@@ -48,9 +56,14 @@ func c12() {
 					found = true
 					result := ip[len(ip)-1]
 					if result == 1 {
+						expected, _ := base64.StdEncoding.DecodeString(output)
+						if bytes.Compare(answer, expected) == 0 {
+							fmt.Println("Challenge 12 passed!")
+						} else {
+							fmt.Println("Challenge 12 failed.")
+						}
 						return
 					}
-					fmt.Print(string(i))
 					answer = append(answer, result)
 					if len(block) > 0 {
 						block = block[1:]
@@ -70,4 +83,7 @@ func c12() {
 			}
 		}
 	}
+
+	fmt.Println("Challenge 12 failed.")
+	return
 }
