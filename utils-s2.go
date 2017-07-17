@@ -3,11 +3,80 @@ package main
 import (
 	"bytes"
 	"crypto/aes"
-	"encoding/base64"
 	"errors"
 	"math/rand"
 	"time"
 )
+
+func breakECB(oracle func([]byte, []byte) []byte) ([]byte, error) {
+	// Step 1: Generate a Random Key
+	rk := randomAESKey()
+
+	// Step 2: Find the blocksize
+	first := len(oracle([]byte{'A'}, rk))
+	buffer := []byte{'A', 'A'}
+	var bs int
+	for len(buffer) < 100 {
+		enc := oracle(buffer, rk)
+		if len(enc) != first {
+			bs = len(enc) - first
+			break
+		}
+		buffer = append(buffer, byte('A'))
+	}
+	if bs != 16 {
+		return nil, errors.New("Something went wrong.")
+	}
+
+	// Step 3: Detect ECB
+	if detectEncryption(oracle(message, rk)) != "ECB" {
+		return nil, errors.New("Something went wrong.")
+	}
+
+	// Step 4: Find the plaintext
+	byteOffset := 0
+	maxOffset := len(oracle([]byte{}, rk)) / bs
+	var answer []byte
+	for byteOffset < maxOffset {
+		block := make([]byte, bs-1)
+		for i := range block {
+			block[i] = byte('A')
+		}
+		input := append(block, answer...)
+		for true {
+			enc := oracle(block, rk)
+			found := false
+			empty := false
+			for i := 0; i < 256; i++ {
+				ip := append(input, byte(i))
+				ec := oracle(ip, rk)
+				if bytes.Compare(enc[bs*byteOffset:bs*(byteOffset+1)], ec[bs*byteOffset:bs*(byteOffset+1)]) == 0 {
+					found = true
+					result := ip[len(ip)-1]
+					if result == 1 {
+						return answer, nil
+					}
+					answer = append(answer, result)
+					if len(block) > 0 {
+						block = block[1:]
+					} else {
+						empty = true
+					}
+					input = append(input, result)[1:]
+					break
+				}
+			}
+			if !found {
+				panic("Could not find a possible value")
+			}
+			if empty {
+				byteOffset++
+				break
+			}
+		}
+	}
+	return nil, errors.New("Something went wrong.")
+}
 
 func pkcs7(message []byte, bs int) []byte {
 	if len(message)%bs == 0 {
@@ -167,12 +236,11 @@ func detectEncryption(ciphertext []byte) string {
 	return "ECB"
 }
 
-func byteAtATimeECBDecryption(p, k []byte) []byte {
-	unknown := "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"
-	decoded, _ := base64.StdEncoding.DecodeString(unknown)
-
-	p = append(p, decoded...)
-	p = pkcs7(p, 16)
-	e, _ := encryptAesEcbMultiblock(p, k)
-	return e
+func getOracle(unknown []byte) func([]byte, []byte) []byte {
+	return func(p, k []byte) []byte {
+		p = append(p, unknown...)
+		p = pkcs7(p, 16)
+		e, _ := encryptAesEcbMultiblock(p, k)
+		return e
+	}
 }
